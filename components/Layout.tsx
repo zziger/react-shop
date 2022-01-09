@@ -15,6 +15,11 @@ export function Layout(props: { children: any }) {
                     </Typography>
                 </Link>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Link href="/cart">
+                        <Button sx={{ mr: 5 }}>
+                            Koszyk
+                        </Button>
+                    </Link>
                     <Typography color="inherit" component="div" sx={{ mr: 3 }}>
                         {(session?.user?.name ?? null)}
                     </Typography>

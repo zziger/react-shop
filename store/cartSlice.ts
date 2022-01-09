@@ -1,15 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { ShopProduct } from "../models/ShopProduct";
 import { RootStore } from "./store";
-
-interface ShopProduct {
-    _id: string;
-    name: string;
-    price: number;
-}
 
 export interface CartElement {
     id: string;
     qty: number;
+    product?: ShopProduct;
 }
 
 export interface CartStore {
