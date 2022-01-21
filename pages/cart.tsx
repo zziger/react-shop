@@ -12,6 +12,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import useSWRImmutable from 'swr/immutable';
 import { useState, useEffect } from "react";
 import Link from 'next/link';
+import { getUser } from "../src/user";
 
 const CartItem = (props: { element: CartElement }) => {
     const { element } = props;
@@ -82,7 +83,8 @@ const Cart: NextPage<{ products: ShopProduct[] }> = (props) => {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const session = await getSession(context);
-    return { props: { session } }
+    const user = session?.user?.email ? cleanObject(await getUser(session.user.email)) : null;
+    return { props: { session, user } }
 }
 
 export default Cart

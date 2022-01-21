@@ -10,11 +10,15 @@ import { getShopProduct } from "../api/products/[id]";
 import StarOutlineIcon from '@mui/icons-material/StarOutline';
 import { useDispatch, useSelector } from 'react-redux'
 import { getCartItems, cartActions, getItemQty } from '../../store/cartSlice'
+import { ShopFavoriteButton } from "../../src/products";
+import { getUser } from "../../src/user";
 
 const Home: NextPage<{ product: ShopProduct }> = (props) => {
     const itemQty = useSelector(getItemQty(props.product._id));
     const dispatch = useDispatch();
-    const { data } = useSWR('/api/products/' + props.product._id, fetcher, { fallbackData: props.product });
+    const { data } = useSWR<ShopProduct>('/api/products/' + props.product._id, fetcher, { fallbackData: props.product });
+    if (!data) return null;
+
     return <Layout>
         <Head>
             <title>{data.name}</title>
@@ -30,7 +34,7 @@ const Home: NextPage<{ product: ShopProduct }> = (props) => {
                             {data.name}
                         </Typography>
                         <Typography component="div" color="text.secondary">
-                            5$
+                            {data.price} $
                         </Typography>
                         <Box>
                             {
@@ -38,7 +42,7 @@ const Home: NextPage<{ product: ShopProduct }> = (props) => {
                                     ? <Button onClick={() => dispatch(cartActions.removeItem(props.product._id))}>Usuń z koszyka</Button>
                                     : <Button onClick={() => dispatch(cartActions.addItem(props.product._id))}>Dodaj do koszyka</Button>
                             }
-                            <IconButton><StarOutlineIcon /></IconButton>
+                            <ShopFavoriteButton product={data} size="small" />
                         </Box>
                     </Grid>
                 </Grid>
@@ -50,10 +54,11 @@ const Home: NextPage<{ product: ShopProduct }> = (props) => {
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const session = await getSession(context);
+    const user = session?.user?.email ? cleanObject(await getUser(session.user.email)) : null;
     try {
         if (typeof context.query.id != "string") return { notFound: true };
-        const product = cleanObject(await getShopProduct(context.query.id));
-        return { props: { session, product } };
+        const product = cleanObject(await getShopProduct(context.query.id, session?.user?.email ?? undefined));
+        return { props: { session, product, user } };
     } catch (e) {
         return { notFound: true };
     }
