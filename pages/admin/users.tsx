@@ -14,10 +14,49 @@ import { useContext, useEffect, useState } from "react";
 import { getUsers } from "../api/users";
 import { User } from "../../models/User";
 import { UserContext } from "../../src/UserContext";
+import PasswordIcon from '@mui/icons-material/Password';
+import sha256 from 'crypto-js/sha256';
+
+const ModalWindow = (props: { open: boolean; id: string; email: string; close(): void; mutate: () => void }) => {
+    const { open, close, mutate } = props;
+    const [password, setPassword] = useState('');
+
+    useEffect(() => {
+        if (!open) return;
+        setPassword('');
+    }, [open]);
+
+    return <Dialog open={open} onClose={() => close()}>
+        <DialogTitle>Zmień hasło dla uytkownika {props.email}</DialogTitle>
+        <DialogContent>
+            <TextField
+                autoFocus
+                margin="dense"
+                id="name"
+                label="Hasło"
+                type="password"
+                fullWidth
+                variant="standard"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+            />
+        </DialogContent>
+        <DialogActions>
+            <Button onClick={() => close()}>Anuluj</Button>
+            <Button onClick={async () => {
+                console.log(sha256(password).toString());
+                await fetch('/api/users/' + props.id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ field: 'password', value: sha256(password).toString() }) });
+                mutate();
+                close();
+            }}>Zmień hasło</Button>
+        </DialogActions>
+    </Dialog>
+}
 
 const AdminUsers: NextPage<{ users: User[] }> = (props) => {
-    const { data, error, mutate } = useSWR('/api/users', fetcher, { fallbackData: props.users });
+    const { data, error, mutate } = useSWR<User[]>('/api/users', fetcher, { fallbackData: props.users });
     const user = useContext(UserContext);
+    const [changePassword, setChangePassword] = useState('');
 
     return <AdminLayout>
         <DataGrid
@@ -27,23 +66,31 @@ const AdminUsers: NextPage<{ users: User[] }> = (props) => {
                 { field: 'email', width: 350, editable: true },
                 { field: 'admin', type: 'boolean', editable: true },
                 {
-                    field: 'actions', type: 'actions', width: 70, getActions: (params) => [
-                        <IconButton onClick={async () => {
+                    field: 'actions', type: 'actions', width: 100, getActions: (params) => [
+                        <IconButton key="delete" onClick={async () => {
                             await fetch('/api/users/' + params.id, { method: 'DELETE' });
                             mutate();
-                        }}><DeleteIcon /></IconButton>
+                        }}>
+                            <DeleteIcon />
+                        </IconButton>,
+                        <IconButton key="changePassword" onClick={() => {
+                            setChangePassword(params.id as string);
+                        }}>
+                            <PasswordIcon />
+                        </IconButton>,
                     ]
                 }
             ]}
-            rows={data}
+            rows={data as any}
             rowsPerPageOptions={[50, 100]}
-            isCellEditable={(params) => params.id !== user._id}
+            isCellEditable={(params) => params.id !== user?._id}
             onCellEditCommit={async (params) => {
                 await fetch('/api/users/' + params.id, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params) });
                 mutate();
             }}
             getRowId={row => row._id}
         />
+        <ModalWindow open={!!changePassword} id={changePassword} email={data?.find(e => e._id == changePassword)?.email ?? ''} close={() => setChangePassword('')} mutate={mutate} />
     </AdminLayout>;
 }
 

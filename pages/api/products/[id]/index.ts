@@ -1,9 +1,11 @@
+import { Types } from "mongoose";
 import { NextApiRequest, NextApiResponse } from "next";
 import { getSession } from "next-auth/react";
-import products from ".";
-import { ShopProduct, ShopProductModel } from "../../../models/ShopProduct";
-import { connectToDatabase } from "../../../src/database";
-import { getUser } from "../../../src/user";
+import products from "..";
+import { ShopProduct, ShopProductModel } from "../../../../models/ShopProduct";
+import { ShopProductRateModel } from "../../../../models/ShopProductRate";
+import { connectToDatabase } from "../../../../src/database";
+import { getUser } from "../../../../src/user";
 
 type Data = ShopProduct;
 
@@ -14,7 +16,31 @@ export async function getShopProduct(id: string, email?: string): Promise<Data> 
     if (email) {
         const user = await getUser(email);
         product.favorite = user.favorites.some(e => e._id.toString() == id);
+        const ownRating = await ShopProductRateModel.findOne({ user: user._id });
+        product.ownRating = ownRating?.rating;
     }
+
+    const rating = await ShopProductRateModel.aggregate([
+        {
+            '$match': {
+                'product': new Types.ObjectId(id)
+            }
+        },
+        {
+            '$group': {
+                '_id': 0,
+                'avg': {
+                    '$avg': '$rating'
+                },
+                'count': {
+                    '$count': {}
+                }
+            }
+        }
+    ]);
+
+    product.rating = rating?.[0]?.avg;
+    product.ratingCount = rating?.[0]?.count;
     return product;
 }
 
@@ -60,7 +86,7 @@ export default async function handler(
         try {
             const products = await getShopProduct(req.query.id, session?.user?.email ?? undefined);
             res.status(200).json(products);
-        } catch(e) {
+        } catch (e) {
             console.log(e);
             return res.status(404).end();
         }

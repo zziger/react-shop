@@ -7,7 +7,7 @@ import { getUser } from "../../../src/user";
 import { getFavoriteShopProducts } from "../products/getFavorites";
 import sha256 from 'crypto-js/sha256';
 
-type Data = User[];
+type Data = User;
 
 export async function getUserByCredentials(login: string, password: string): Promise<HydratedDocument<User> | undefined> {
     await connectToDatabase();

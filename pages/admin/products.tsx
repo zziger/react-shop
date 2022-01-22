@@ -87,7 +87,7 @@ const AdminProducts: NextPage<{ products: ShopProduct[] }> = (props) => {
                 { field: 'image', width: 350, editable: true },
                 {
                     field: 'actions', type: 'actions', width: 70, getActions: (params) => [
-                        <IconButton onClick={async () => {
+                        <IconButton key="delete" onClick={async () => {
                             await fetch('/api/products/' + params.id, { method: 'DELETE' });
                             mutate();
                         }}><DeleteIcon /></IconButton>

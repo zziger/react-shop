@@ -6,6 +6,9 @@ export interface ShopProduct {
     price: number;
     image: string;
     favorite?: boolean;
+    rating?: number;
+    ratingCount?: number;
+    ownRating?: number;
 }
 
 const schema = new Schema<ShopProduct>({

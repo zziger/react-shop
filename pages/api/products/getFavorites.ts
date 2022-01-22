@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSession } from 'next-auth/react';
-import { FavoriteModel } from '../../../models/Favorite';
 import { ShopProduct, ShopProductModel } from '../../../models/ShopProduct'
 import { connectToDatabase } from '../../../src/database';
 import { getUser } from '../../../src/user';
